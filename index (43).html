@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en" style="overflow-x:hidden; scroll-behavior:smooth;">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Beauty Band Studio — Prague</title>
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Three.js r128 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- GSAP + ScrollTrigger -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+<!-- Google Fonts: Cormorant + Manrope -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Cormorant Garamond', 'serif'],
+          body: ['Manrope', 'sans-serif'],
+        },
+        colors: {
+          platinum: '#e8e4df',
+          obsidian: '#0a0a0a',
+          blush: '#ffb6c1',
+          neon: '#ff6ec7',
+          gold: '#c9a96e',
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: hidden; background: #0a0a0a; color: #e8e4df; font-family: 'Manrope', sans-serif; }
+
+  /* ── Preloader ── */
+  #preloader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0a0a0a;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 1.5rem;
+    transition: opacity 0.9s ease, visibility 0.9s ease;
+  }
+  #preloader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+  #preloader .pre-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: #e8e4df;
+    animation: fadeLetters 1.8s ease forwards;
+  }
+  #preloader .pre-bar {
+    width: 0; height: 1px; background: linear-gradient(90deg, transparent, #ffb6c1, #c9a96e, transparent);
+    animation: expandBar 1.6s ease 0.4s forwards;
+  }
+  #preloader .pre-sub {
+    font-size: 0.7rem; letter-spacing: 0.5em; text-transform: uppercase; color: #666; opacity: 0;
+    animation: fadeIn 1s ease 1s forwards;
+  }
+  @keyframes expandBar { to { width: 220px; } }
+  @keyframes fadeLetters { 0%{opacity:0;filter:blur(12px)} 100%{opacity:1;filter:blur(0)} }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* ── Canvas fixed bg ── */
+  #canvas-container {
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 0; pointer-events: none;
+  }
+
+  /* ── Navbar ── */
+  #navbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 2.5rem;
+    background: rgba(10,10,10,0.55);
+    backdrop-filter: blur(18px) saturate(1.4);
+    border-bottom: 1px solid rgba(255,182,193,0.08);
+    transition: background 0.4s;
+  }
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem; font-weight: 400;
+    letter-spacing: 0.18em; color: #e8e4df;
+    text-transform: uppercase;
+  }
+  .nav-logo span { color: #ffb6c1; }
+  .lang-switcher { display: flex; gap: 0.5rem; align-items: center; }
+  .lang-btn {
+    background: transparent; border: 1px solid rgba(201,169,110,0.25);
+    color: #888; font-size: 0.68rem; letter-spacing: 0.15em;
+    padding: 0.35rem 0.7rem; border-radius: 2px; cursor: pointer;
+    transition: all 0.25s; text-transform: uppercase; font-family: 'Manrope', sans-serif;
+  }
+  .lang-btn:hover, .lang-btn.active { color: #e8e4df; border-color: #c9a96e; background: rgba(201,169,110,0.1); }
+
+  /* ── Sections ── */
+  section { position: relative; z-index: 1; }
+
+  /* ── Hero ── */
+  #hero {
+    height: 100vh; display: flex; align-items: center; justify-content: flex-start;
+    padding: 0 8vw;
+  }
+  .hero-content { max-width: 52rem; }
+  .hero-eyebrow {
+    font-size: 0.65rem; letter-spacing: 0.6em; text-transform: uppercase;
+    color: #ffb6c1; margin-bottom: 1.5rem; opacity: 0;
+    animation: slideUp 1s ease 2.2s forwards;
+  }
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(3.5rem, 8vw, 7.5rem);
+    font-weight: 300; line-height: 1.02; color: #e8e4df;
+    opacity: 0; animation: slideUp 1s ease 2.4s forwards;
+  }
+  .hero-title em { font-style: italic; color: #ffb6c1; }
+  .hero-subtitle {
+    font-size: 0.85rem; letter-spacing: 0.1em; color: #888;
+    margin-top: 2rem; max-width: 30rem; line-height: 1.8;
+    opacity: 0; animation: slideUp 1s ease 2.6s forwards;
+  }
+  .hero-cta {
+    margin-top: 3rem; display: inline-flex; align-items: center; gap: 1rem;
+    border: 1px solid rgba(201,169,110,0.4); padding: 1rem 2.2rem;
+    font-size: 0.72rem; letter-spacing: 0.35em; text-transform: uppercase; color: #c9a96e;
+    cursor: pointer; transition: all 0.35s; text-decoration: none;
+    opacity: 0; animation: slideUp 1s ease 2.8s forwards;
+    background: transparent;
+  }
+  .hero-cta:hover { background: rgba(201,169,110,0.08); border-color: #c9a96e; color: #e8e4df; }
+  .hero-cta::after { content: '→'; transition: transform 0.3s; }
+  .hero-cta:hover::after { transform: translateX(6px); }
+  @keyframes slideUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+
+  /* scroll indicator */
+  .scroll-hint {
+    position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    font-size: 0.6rem; letter-spacing: 0.4em; color: #444; text-transform: uppercase;
+    opacity: 0; animation: fadeIn 1s ease 3.2s forwards;
+  }
+  .scroll-hint::after {
+    content: ''; width: 1px; height: 3rem;
+    background: linear-gradient(to bottom, #c9a96e, transparent);
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+  @keyframes scrollLine { 0%,100%{opacity:0.3;transform:scaleY(0.5)} 50%{opacity:1;transform:scaleY(1)} }
+
+  /* ── Services Section ── */
+  #services {
+    min-height: 100vh; padding: 12rem 6vw 8rem;
+  }
+  #services-inner { overflow: hidden; }
+  .section-label {
+    font-size: 0.6rem; letter-spacing: 0.6em; text-transform: uppercase; color: #ffb6c1;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.8rem, 5vw, 5rem);
+    font-weight: 300; color: #e8e4df; margin-bottom: 4rem;
+    line-height: 1.1;
+  }
+  .section-title em { font-style: italic; color: #c9a96e; }
+
+  /* Bento Grid */
+  #bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    will-change: transform;
+  }
+  @media (max-width: 900px) { #bento-grid { grid-template-columns: 1fr; } }
+
+  .bento-card {
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 3rem 2.5rem;
+    background: rgba(20,18,18,0.7);
+    backdrop-filter: blur(8px);
+    cursor: default;
+    transition: border-color 0.4s, transform 0.12s;
+    transform-style: preserve-3d;
+    min-height: 440px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .bento-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255,110,199,0.12) 0%, transparent 65%);
+    opacity: 0; transition: opacity 0.4s; pointer-events: none;
+  }
+  .bento-card:hover::before { opacity: 1; }
+  .bento-card:hover { border-color: rgba(255,110,199,0.2); }
+
+  .bento-num {
+    font-family: 'Cormorant Garamond', serif; font-size: 5rem; font-weight: 300;
+    color: rgba(255,255,255,0.04); line-height: 1; position: absolute; top: 1.5rem; right: 2rem;
+  }
+  .bento-icon { font-size: 2rem; margin-bottom: 1.5rem; }
+  .bento-title {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 400;
+    color: #e8e4df; margin-bottom: 1rem; line-height: 1.2;
+  }
+  .bento-desc { font-size: 0.8rem; color: #777; line-height: 1.85; flex: 1; }
+  .bento-tag {
+    margin-top: 2rem; display: inline-block;
+    font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase;
+    color: #c9a96e; border-bottom: 1px solid rgba(201,169,110,0.3); padding-bottom: 2px;
+  }
+
+  /* data pulse strings */
+  .data-pulse {
+    position: fixed; font-size: 0.55rem; letter-spacing: 0.2em;
+    font-family: 'Manrope', monospace; color: #ff6ec7;
+    opacity: 0; pointer-events: none; z-index: 500;
+    white-space: nowrap; text-shadow: 0 0 8px #ff6ec7;
+  }
+
+  /* ── Specialists Section ── */
+  #specialists {
+    min-height: 100vh; padding: 12rem 6vw 8rem;
+  }
+  .specialists-grid {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 2rem; margin-top: 4rem;
+  }
+  @media (max-width: 900px) { .specialists-grid { grid-template-columns: 1fr; } }
+
+  .spec-card {
+    position: relative; overflow: hidden; border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(15,13,13,0.8);
+  }
+  .spec-avatar {
+    width: 100%; aspect-ratio: 3/4; object-fit: cover;
+    filter: grayscale(100%) brightness(0.7);
+    transition: filter 0.6s ease;
+    background: linear-gradient(135deg, #1a1a1a, #2a2020);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .spec-avatar-inner {
+    width: 100%; aspect-ratio: 3/4;
+    background: linear-gradient(135deg, #1c1a1a 0%, #2e2020 40%, #1a1c20 100%);
+    filter: grayscale(100%) brightness(0.7);
+    transition: filter 0.6s ease;
+    position: relative; overflow: hidden;
+  }
+  .spec-avatar-inner::after {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 40% 30%, rgba(255,182,193,0.15), transparent 60%);
+  }
+  .spec-card:hover .spec-avatar-inner { filter: grayscale(0%) brightness(1); }
+  .spec-silhouette {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 60%; opacity: 0.3;
+  }
+  .spec-info { padding: 1.8rem; }
+  .spec-name {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: #e8e4df;
+  }
+  .spec-role { font-size: 0.65rem; letter-spacing: 0.3em; color: #ffb6c1; text-transform: uppercase; margin: 0.4rem 0 1rem; }
+  .spec-bio { font-size: 0.78rem; color: #666; line-height: 1.8; }
+  .spec-tags { margin-top: 1.2rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .spec-tag {
+    font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase;
+    border: 1px solid rgba(201,169,110,0.2); padding: 0.25rem 0.6rem;
+    color: #c9a96e; border-radius: 2px;
+  }
+
+  /* ── Location Section ── */
+  #location {
+    min-height: 80vh; padding: 10rem 6vw 6rem;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: start;
+  }
+  @media (max-width: 900px) { #location { grid-template-columns: 1fr; } }
+  .location-map-wrap {
+    border: 1px solid rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden;
+    position: relative;
+  }
+  .location-map-wrap::before {
+    content: ''; position: absolute; inset: 0;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.6); z-index: 2; pointer-events: none;
+  }
+  .location-map-wrap iframe { display: block; width: 100%; height: 420px; filter: invert(1) hue-rotate(200deg) saturate(0.4) brightness(0.85); }
+
+  .location-detail { display: flex; flex-direction: column; gap: 2.5rem; }
+  .location-row { display: flex; flex-direction: column; gap: 0.4rem; }
+  .location-key { font-size: 0.6rem; letter-spacing: 0.4em; text-transform: uppercase; color: #ffb6c1; }
+  .location-val { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: #e8e4df; font-weight: 300; }
+  .location-val small { font-family: 'Manrope', sans-serif; font-size: 0.78rem; color: #666; display: block; margin-top: 0.2rem; }
+
+  /* ── Footer ── */
+  footer {
+    padding: 4rem 6vw 3rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1.5rem;
+  }
+  .footer-logo {
+    font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; letter-spacing: 0.2em;
+    color: #e8e4df;
+  }
+  .footer-copy { font-size: 0.65rem; color: #444; letter-spacing: 0.12em; }
+  .footer-links { display: flex; gap: 2rem; }
+  .footer-links a { font-size: 0.65rem; letter-spacing: 0.2em; color: #555; text-decoration: none;
+    text-transform: uppercase; transition: color 0.25s; }
+  .footer-links a:hover { color: #c9a96e; }
+
+  /* decorative horizontal rule */
+  .hr-deco { border: none; height: 1px; background: linear-gradient(90deg, transparent, rgba(201,169,110,0.25), transparent); margin: 0; }
+
+  /* scroll-reveal utility */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.9s ease, transform 0.9s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     PRELOADER
+════════════════════════════════════════════════════ -->
+<div id="preloader">
+  <div class="pre-logo" data-i18n="brand">BEAUTY BAND</div>
+  <div class="pre-bar"></div>
+  <div class="pre-sub" data-i18n="preloader_sub">Studio — Praha · Italská 23</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     FIXED CANVAS (Three.js background)
+════════════════════════════════════════════════════ -->
+<div id="canvas-container"></div>
+
+<!-- Data pulse strings (injected via JS) -->
+<div class="data-pulse" id="pulse1">BAND_HAIR_DESIGN</div>
+<div class="data-pulse" id="pulse2">COLOR_MATRIX</div>
+<div class="data-pulse" id="pulse3">BEAUTY_BAND</div>
+<div class="data-pulse" id="pulse4">NAIL_ARCHITECTURE</div>
+
+<!-- ══════════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════════════ -->
+<nav id="navbar">
+  <div class="nav-logo">Beauty <span>Band</span> Studio</div>
+  <div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('cz')">CZ</button>
+    <button class="lang-btn" onclick="setLang('ru')">RU</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-content">
+    <p class="hero-eyebrow" data-i18n="hero_eyebrow">Prague · Est. 2019 · By Appointment</p>
+    <h1 class="hero-title" data-i18n="hero_title">
+      Where<br/><em>beauty</em><br/>becomes<br/>architecture.
+    </h1>
+    <p class="hero-subtitle" data-i18n="hero_subtitle">
+      A luxury atelier on Italská, devoted to the craft of hair design, colour mastery, and sculptural nail art. Every detail is intentional.
+    </p>
+    <a href="#services" class="hero-cta" data-i18n="hero_cta">Discover Our Studio</a>
+  </div>
+  <div class="scroll-hint" data-i18n="scroll_hint">Scroll</div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     SERVICES — Bento Grid (GSAP Pinned)
+════════════════════════════════════════════════════ -->
+<section id="services">
+  <div id="services-inner">
+    <p class="section-label reveal" data-i18n="services_label">Atelier Services</p>
+    <h2 class="section-title reveal" data-i18n="services_title">
+      Precision craft,<br/><em>elevated.</em>
+    </h2>
+
+    <div id="bento-grid">
+      <!-- Card 1 -->
+      <div class="bento-card" data-tilt>
+        <span class="bento-num">01</span>
+        <div>
+          <div class="bento-icon">✦</div>
+          <h3 class="bento-title" data-i18n="s1_title">Premium Hair Design &amp; Coloring</h3>
+          <p class="bento-desc" data-i18n="s1_desc">
+            Bespoke cuts engineered to the millimetre. Our colour philosophy blends Parisian balayage with Central European finesse — from luminous lived-in tones to bold editorial transformations. Every appointment includes a full scalp consultation and a dedicated finishing ritual.
+          </p>
+        </div>
+        <span class="bento-tag" data-i18n="s1_tag">Hair · Colour · Texture</span>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bento-card" data-tilt>
+        <span class="bento-num">02</span>
+        <div>
+          <div class="bento-icon">◈</div>
+          <h3 class="bento-title" data-i18n="s2_title">Bespoke Nail Architecture</h3>
+          <p class="bento-desc" data-i18n="s2_desc">
+            Nails treated as wearable sculpture. We combine gel systems, hand-painted nail art, chrome powders, and seasonal palettes into coherent aesthetic statements. Longevity meets artistry in every application — lasting up to four weeks without compromise.
+          </p>
+        </div>
+        <span class="bento-tag" data-i18n="s2_tag">Gel · Art · Sculpt</span>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bento-card" data-tilt>
+        <span class="bento-num">03</span>
+        <div>
+          <div class="bento-icon">◉</div>
+          <h3 class="bento-title" data-i18n="s3_title">Red-Carpet Makeup &amp; Lash Art</h3>
+          <p class="bento-desc" data-i18n="s3_desc">
+            Editorial-grade makeup services from everyday luminosity to full cinematic glamour. Paired with handcrafted lash applications — classic, volume, or hybrid — designed to frame your natural architecture. Available for events, editorials, and bridal occasions.
+          </p>
+        </div>
+        <span class="bento-tag" data-i18n="s3_tag">Makeup · Lash · Bridal</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr-deco"/>
+
+<!-- ══════════════════════════════════════════════════
+     SPECIALISTS
+════════════════════════════════════════════════════ -->
+<section id="specialists" style="padding: 12rem 6vw 8rem;">
+  <p class="section-label reveal" data-i18n="spec_label">Our Artisans</p>
+  <h2 class="section-title reveal" data-i18n="spec_title">
+    The hands<br/>behind the <em>craft.</em>
+  </h2>
+
+  <div class="specialists-grid">
+
+    <!-- Specialist 1 -->
+    <div class="spec-card reveal">
+      <div class="spec-avatar-inner" style="background: linear-gradient(135deg,#1c1618,#2e2022,#1a1420);">
+        <svg viewBox="0 0 220 340" xmlns="http://www.w3.org/2000/svg" style="position:absolute;bottom:0;left:0;width:100%;height:100%;opacity:0.18;">
+          <ellipse cx="110" cy="95" rx="44" ry="50" fill="#e8e4df"/>
+          <path d="M58 340 Q66 210 110 195 Q154 210 162 340Z" fill="#e8e4df"/>
+          <path d="M70 90 Q72 30 110 28 Q148 30 150 90" fill="none" stroke="#e8e4df" stroke-width="8"/>
+        </svg>
+      </div>
+      <div class="spec-info">
+        <div class="spec-name" data-i18n="spec1_name">Kristýna Novotná</div>
+        <div class="spec-role" data-i18n="spec1_role">Master Colourist & Hair Architect</div>
+        <p class="spec-bio" data-i18n="spec1_bio">A decade of expertise in colour theory and precision cutting, trained across Prague, Vienna, and London. Kristýna specialises in bespoke toning and structural cuts that work with each client's unique bone structure.</p>
+        <div class="spec-tags">
+          <span class="spec-tag">Balayage</span>
+          <span class="spec-tag">Precision Cut</span>
+          <span class="spec-tag">Toning</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Specialist 2 -->
+    <div class="spec-card reveal" style="transition-delay:0.15s;">
+      <div class="spec-avatar-inner" style="background: linear-gradient(135deg,#181c1a,#202e26,#141a1c);">
+        <svg viewBox="0 0 220 340" xmlns="http://www.w3.org/2000/svg" style="position:absolute;bottom:0;left:0;width:100%;height:100%;opacity:0.18;">
+          <ellipse cx="110" cy="95" rx="42" ry="48" fill="#e8e4df"/>
+          <path d="M60 340 Q68 215 110 198 Q152 215 160 340Z" fill="#e8e4df"/>
+          <path d="M75 92 Q72 38 110 36 Q148 38 145 92" fill="none" stroke="#e8e4df" stroke-width="6"/>
+          <path d="M68 92 Q60 110 62 125" fill="none" stroke="#e8e4df" stroke-width="4"/>
+          <path d="M152 92 Q160 110 158 125" fill="none" stroke="#e8e4df" stroke-width="4"/>
+        </svg>
+      </div>
+      <div class="spec-info">
+        <div class="spec-name" data-i18n="spec2_name">Veronika Horáčková</div>
+        <div class="spec-role" data-i18n="spec2_role">Nail Sculptor & Art Director</div>
+        <p class="spec-bio" data-i18n="spec2_bio">Veronika approaches nails as three-dimensional canvases. Her background in fine arts informs every application — from minimal editorial chrome finishes to intricate hand-painted collections inspired by Bohemian botanical motifs.</p>
+        <div class="spec-tags">
+          <span class="spec-tag">Sculpting</span>
+          <span class="spec-tag">Nail Art</span>
+          <span class="spec-tag">Chrome</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Specialist 3 -->
+    <div class="spec-card reveal" style="transition-delay:0.3s;">
+      <div class="spec-avatar-inner" style="background: linear-gradient(135deg,#1c1818,#2e2424,#1c1820);">
+        <svg viewBox="0 0 220 340" xmlns="http://www.w3.org/2000/svg" style="position:absolute;bottom:0;left:0;width:100%;height:100%;opacity:0.18;">
+          <ellipse cx="110" cy="90" rx="46" ry="52" fill="#e8e4df"/>
+          <path d="M55 340 Q65 208 110 192 Q155 208 165 340Z" fill="#e8e4df"/>
+          <path d="M66 88 Q68 26 110 24 Q152 26 154 88" fill="none" stroke="#e8e4df" stroke-width="10" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="spec-info">
+        <div class="spec-name" data-i18n="spec3_name">Adéla Procházková</div>
+        <div class="spec-role" data-i18n="spec3_role">Makeup Artist & Lash Specialist</div>
+        <p class="spec-bio" data-i18n="spec3_bio">Adéla's approach bridges editorial runway sensibility with the quiet confidence of everyday beauty. Trained in Paris and certified in advanced lash application techniques, she constructs looks with architectural precision and emotional intelligence.</p>
+        <div class="spec-tags">
+          <span class="spec-tag">Editorial</span>
+          <span class="spec-tag">Bridal</span>
+          <span class="spec-tag">Lash Volume</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="hr-deco"/>
+
+<!-- ══════════════════════════════════════════════════
+     LOCATION
+════════════════════════════════════════════════════ -->
+<section id="location">
+  <div class="location-detail">
+    <div>
+      <p class="section-label reveal" data-i18n="loc_label">Find Us</p>
+      <h2 class="section-title reveal" style="font-size:clamp(2.2rem,4vw,4rem);" data-i18n="loc_title">
+        At the heart<br/>of <em>Vinohrady.</em>
+      </h2>
+    </div>
+
+    <div class="location-row reveal">
+      <span class="location-key" data-i18n="loc_address_key">Address</span>
+      <span class="location-val">Italská 2561/23<small>Praha 2 — Vinohrady, 120 00</small></span>
+    </div>
+    <div class="location-row reveal">
+      <span class="location-key" data-i18n="loc_hours_key">Studio Hours</span>
+      <span class="location-val" data-i18n="loc_hours_val">Mon–Sat 9:00–20:00<small data-i18n="loc_hours_note">Sunday by private booking only</small></span>
+    </div>
+    <div class="location-row reveal">
+      <span class="location-key" data-i18n="loc_contact_key">Contact</span>
+      <span class="location-val">+420 777 000 000<small>studio@beautyband.cz</small></span>
+    </div>
+    <div class="location-row reveal">
+      <span class="location-key" data-i18n="loc_transport_key">Transport</span>
+      <span class="location-val" data-i18n="loc_transport_val">Metro A — Náměstí Míru<small data-i18n="loc_transport_note">6 min walk · Tram 4, 22, 23 (Italská stop)</small></span>
+    </div>
+  </div>
+
+  <div class="location-map-wrap reveal">
+    <iframe
+      src="https://maps.google.com/maps?q=Italsk%C3%A1+2561%2F23%2C+Praha+2&output=embed&z=16"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      title="Beauty Band Studio — Prague">
+    </iframe>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-logo">Beauty Band Studio</div>
+  <div class="footer-links">
+    <a href="#hero" data-i18n="footer_home">Home</a>
+    <a href="#services" data-i18n="footer_services">Services</a>
+    <a href="#specialists" data-i18n="footer_team">Team</a>
+    <a href="#location" data-i18n="footer_contact">Contact</a>
+  </div>
+  <div class="footer-copy" data-i18n="footer_copy">© 2025 Beauty Band Studio, Praha. All rights reserved.</div>
+</footer>
+
+
+<!-- ══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════════
+   i18n DICTIONARY
+═══════════════════════════════════════════ */
+const dict = {
+  en: {
+    brand:'BEAUTY BAND', preloader_sub:'Studio — Praha · Italská 23',
+    hero_eyebrow:'Prague · Est. 2019 · By Appointment',
+    hero_title:'Where<br/><em>beauty</em><br/>becomes<br/>architecture.',
+    hero_subtitle:'A luxury atelier on Italská, devoted to the craft of hair design, colour mastery, and sculptural nail art. Every detail is intentional.',
+    hero_cta:'Discover Our Studio',
+    scroll_hint:'Scroll',
+    services_label:'Atelier Services',
+    services_title:'Precision craft,<br/><em>elevated.</em>',
+    s1_title:'Premium Hair Design & Coloring',
+    s1_desc:'Bespoke cuts engineered to the millimetre. Our colour philosophy blends Parisian balayage with Central European finesse — from luminous lived-in tones to bold editorial transformations. Every appointment includes a full scalp consultation and a dedicated finishing ritual.',
+    s1_tag:'Hair · Colour · Texture',
+    s2_title:'Bespoke Nail Architecture',
+    s2_desc:'Nails treated as wearable sculpture. We combine gel systems, hand-painted nail art, chrome powders, and seasonal palettes into coherent aesthetic statements. Longevity meets artistry in every application — lasting up to four weeks without compromise.',
+    s2_tag:'Gel · Art · Sculpt',
+    s3_title:'Red-Carpet Makeup & Lash Art',
+    s3_desc:'Editorial-grade makeup services from everyday luminosity to full cinematic glamour. Paired with handcrafted lash applications — classic, volume, or hybrid — designed to frame your natural architecture. Available for events, editorials, and bridal occasions.',
+    s3_tag:'Makeup · Lash · Bridal',
+    spec_label:'Our Artisans',
+    spec_title:'The hands<br/>behind the <em>craft.</em>',
+    spec1_name:'Kristýna Novotná', spec1_role:'Master Colourist & Hair Architect',
+    spec1_bio:"A decade of expertise in colour theory and precision cutting, trained across Prague, Vienna, and London. Kristýna specialises in bespoke toning and structural cuts that work with each client's unique bone structure.",
+    spec2_name:'Veronika Horáčková', spec2_role:'Nail Sculptor & Art Director',
+    spec2_bio:'Veronika approaches nails as three-dimensional canvases. Her background in fine arts informs every application — from minimal editorial chrome finishes to intricate hand-painted collections inspired by Bohemian botanical motifs.',
+    spec3_name:'Adéla Procházková', spec3_role:'Makeup Artist & Lash Specialist',
+    spec3_bio:"Adéla's approach bridges editorial runway sensibility with the quiet confidence of everyday beauty. Trained in Paris and certified in advanced lash application techniques, she constructs looks with architectural precision and emotional intelligence.",
+    loc_label:'Find Us', loc_title:"At the heart<br/>of <em>Vinohrady.</em>",
+    loc_address_key:'Address', loc_hours_key:'Studio Hours',
+    loc_hours_val:'Mon–Sat 9:00–20:00', loc_hours_note:'Sunday by private booking only',
+    loc_contact_key:'Contact', loc_transport_key:'Transport',
+    loc_transport_val:'Metro A — Náměstí Míru', loc_transport_note:'6 min walk · Tram 4, 22, 23 (Italská stop)',
+    footer_home:'Home', footer_services:'Services', footer_team:'Team', footer_contact:'Contact',
+    footer_copy:'© 2025 Beauty Band Studio, Praha. All rights reserved.'
+  },
+  cz: {
+    brand:'BEAUTY BAND', preloader_sub:'Studio — Praha · Italská 23',
+    hero_eyebrow:'Praha · Zal. 2019 · Na objednávku',
+    hero_title:'Kde se<br/><em>krása</em><br/>stává<br/>architekturou.',
+    hero_subtitle:'Luxusní atelier na Italské, zasvěcený umění vlasového designu, mistrovství barev a sochařského manikúry. Každý detail je záměrný.',
+    hero_cta:'Prozkoumejte Studio',
+    scroll_hint:'Scrollujte',
+    services_label:'Ateliérové Služby',
+    services_title:'Precizní řemeslo,<br/><em>povýšené.</em>',
+    s1_title:'Prémiový Design Vlasů & Barvení',
+    s1_desc:'Zákazkové střihy konstruované na milimetr. Naše barevná filozofie propojuje pařížský balayage se středoevropskou jemností — od svítivých přirozených tónů po odvážné editoriální proměny. Každá návštěva zahrnuje konzultaci pokožky hlavy a závěrečný rituál.',
+    s1_tag:'Vlasy · Barva · Textura',
+    s2_title:'Zákazková Architektura Nehtů',
+    s2_desc:'Nehty jako nositelná skulptura. Kombinujeme gelové systémy, ručně malované motivy, chromové pigmenty a sezónní palety do koherentních estetických sdělení. Trvanlivost se setkává s uměním — výsledek vydrží až čtyři týdny.',
+    s2_tag:'Gel · Umění · Sculpt',
+    s3_title:'Red-Carpet Líčení & Umění Řas',
+    s3_desc:'Editoriální líčení od každodenní svítivosti po plný filmový glamour. V kombinaci s řasovými aplikacemi — klasickými, objemovými nebo hybridními — navrženými tak, aby rámovaly vaši přirozenou architekturu. K dispozici pro události, editoriale a svatby.',
+    s3_tag:'Líčení · Řasy · Nevěsta',
+    spec_label:'Naši Řemeslníci',
+    spec_title:'Ruce<br/>za <em>řemeslem.</em>',
+    spec1_name:'Kristýna Novotná', spec1_role:'Mistr Koloristka & Vlasová Architektka',
+    spec1_bio:'Desetiletá expertíza v teorii barev a precizním stříhání, trénovaná v Praze, Vídni a Londýně. Kristýna se specializuje na zákazkové tónování a strukturální střihy ušité na míru každého klienta.',
+    spec2_name:'Veronika Horáčková', spec2_role:'Nehtová Sochařka & Art Director',
+    spec2_bio:'Veronika přistupuje k nehtům jako k trojrozměrným plátnům. Její vzdělání ve výtvarném umění ovlivňuje každou aplikaci — od minimálních chromových provedení po složité ručně malované kolekce inspirované českými botanickými motivy.',
+    spec3_name:'Adéla Procházková', spec3_role:'Vizážistka & Specialistka na Řasy',
+    spec3_bio:'Přístup Adély propojuje editoriální sensibilitu s klidnou sebedůvěrou každodenní krásy. Vyškolená v Paříži a certifikovaná v pokročilých technikách aplikace řas.',
+    loc_label:'Najděte Nás', loc_title:"V srdci<br/><em>Vinohrad.</em>",
+    loc_address_key:'Adresa', loc_hours_key:'Otevírací Doba',
+    loc_hours_val:'Po–So 9:00–20:00', loc_hours_note:'Neděle pouze na soukromé rezervace',
+    loc_contact_key:'Kontakt', loc_transport_key:'Doprava',
+    loc_transport_val:'Metro A — Náměstí Míru', loc_transport_note:'6 min chůze · Tramvaj 4, 22, 23 (zastávka Italská)',
+    footer_home:'Domů', footer_services:'Služby', footer_team:'Tým', footer_contact:'Kontakt',
+    footer_copy:'© 2025 Beauty Band Studio, Praha. Všechna práva vyhrazena.'
+  },
+  ru: {
+    brand:'BEAUTY BAND', preloader_sub:'Студия — Прага · Италска 23',
+    hero_eyebrow:'Прага · Осн. 2019 · По записи',
+    hero_title:'Где<br/><em>красота</em><br/>становится<br/>архитектурой.',
+    hero_subtitle:'Люксовое ателье на Италской, посвящённое искусству дизайна волос, мастерству цвета и скульптурному маникюру. Каждая деталь осознана.',
+    hero_cta:'Открыть Студию',
+    scroll_hint:'Скролл',
+    services_label:'Услуги Ателье',
+    services_title:'Точное мастерство,<br/><em>возведённое.</em>',
+    s1_title:'Премиальный Дизайн Волос и Окраска',
+    s1_desc:'Индивидуальные стрижки, созданные с точностью до миллиметра. Наша цветовая философия объединяет парижский балаяж с центральноевропским изяществом — от натуральных светлых тонов до смелых редакционных преображений.',
+    s1_tag:'Волосы · Цвет · Текстура',
+    s2_title:'Авторская Архитектура Ногтей',
+    s2_desc:'Ногти как носимая скульптура. Мы сочетаем гелевые системы, ручную роспись, хромовые пигменты и сезонные палитры. Результат сохраняется до четырёх недель без компромиссов.',
+    s2_tag:'Гель · Арт · Скульпт',
+    s3_title:'Макияж Red-Carpet и Искусство Ресниц',
+    s3_desc:'Редакционный макияж от повседневного сияния до полного кинематографического гламура. В сочетании с ресничными нарощиваниями — классикой, объёмом или гибридом — разработанными для вашего образа.',
+    s3_tag:'Макияж · Ресницы · Свадьба',
+    spec_label:'Наши Мастера',
+    spec_title:'Руки<br/>создающие <em>шедевры.</em>',
+    spec1_name:'Кристина Новотна', spec1_role:'Мастер-Колорист и Архитектор Волос',
+    spec1_bio:'Десятилетний опыт в теории цвета и точных стрижках, обучение в Праге, Вене и Лондоне. Кристина специализируется на индивидуальном тонировании и структурных стрижках.',
+    spec2_name:'Вероника Горачкова', spec2_role:'Скульптор Ногтей и Арт-Директор',
+    spec2_bio:'Вероника подходит к ногтям как к трёхмерным холстам. Образование в области изобразительного искусства влияет на каждое покрытие.',
+    spec3_name:'Адела Прохазкова', spec3_role:'Визажист и Специалист по Ресницам',
+    spec3_bio:'Подход Аделы объединяет редакционную чувствительность с уверенностью повседневной красоты. Обучение в Париже и сертификация в продвинутых техниках наращивания ресниц.',
+    loc_label:'Найти Нас', loc_title:"В самом сердце<br/><em>Виноград.</em>",
+    loc_address_key:'Адрес', loc_hours_key:'Часы Работы',
+    loc_hours_val:'Пн–Сб 9:00–20:00', loc_hours_note:'Воскресенье только по частному бронированию',
+    loc_contact_key:'Контакт', loc_transport_key:'Транспорт',
+    loc_transport_val:'Метро A — Náměstí Míru', loc_transport_note:'6 мин пешком · Трамвай 4, 22, 23 (остановка Italská)',
+    footer_home:'Главная', footer_services:'Услуги', footer_team:'Команда', footer_contact:'Контакт',
+    footer_copy:'© 2025 Beauty Band Studio, Прага. Все права защищены.'
+  }
+};
+
+let currentLang = 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.lang-btn').forEach(b => { if(b.textContent.trim().toLowerCase() === lang) b.classList.add('active'); });
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(dict[lang] && dict[lang][key]) {
+      el.innerHTML = dict[lang][key];
+    }
+  });
+}
+
+
+/* ═══════════════════════════════════════════
+   THREE.JS ENGINE
+═══════════════════════════════════════════ */
+(function() {
+  const container = document.getElementById('canvas-container');
+  const W = window.innerWidth, H = window.innerHeight;
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.setClearColor(0x000000, 0);
+  container.appendChild(renderer.domElement);
+
+  // Scene & Camera
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 200);
+  camera.position.set(0, 0, 4.6);
+
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+  scene.add(ambientLight);
+
+  const dirLight1 = new THREE.DirectionalLight(0xffffff, 5.5);
+  dirLight1.position.set(6, 6, 6);
+  scene.add(dirLight1);
+
+  const dirLight2 = new THREE.DirectionalLight(0xffb6c1, 4.0);
+  dirLight2.position.set(-6, -2, -4);
+  scene.add(dirLight2);
+
+  const pinkPoint = new THREE.PointLight(0xff6ec7, 2.0, 12);
+  pinkPoint.position.set(-3, 2, 2);
+  scene.add(pinkPoint);
+
+  const goldPoint = new THREE.PointLight(0xc9a96e, 1.5, 10);
+  goldPoint.position.set(3, -2, -2);
+  scene.add(goldPoint);
+
+  // Torus Knot — Liquid Platinum
+  const geometry = new THREE.TorusKnotGeometry(1.2, 0.32, 180, 24, 2, 3);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    metalness: 1.0,
+    roughness: 0.02,
+    envMapIntensity: 1.5
+  });
+  const knotMesh = new THREE.Mesh(geometry, material);
+  knotMesh.position.set(0, 0, 0);
+  scene.add(knotMesh);
+
+  // env map — simple procedural cube for reflections
+  const pmremGenerator = new THREE.PMREMGenerator(renderer);
+  const envScene = new THREE.Scene();
+  envScene.background = new THREE.Color(0x111111);
+  // create a simple gradient env by adding colored planes
+  const envColors = [0xffb6c1, 0xc9a96e, 0x330033, 0x001122, 0x220000, 0x002222];
+  const dirs = [
+    [10,0,0],[-10,0,0],[0,10,0],[0,-10,0],[0,0,10],[0,0,-10]
+  ];
+  envColors.forEach((col, i) => {
+    const pl = new THREE.PointLight(col, 3, 20);
+    pl.position.set(...dirs[i]);
+    envScene.add(pl);
+  });
+  const envTex = pmremGenerator.fromScene(envScene).texture;
+  scene.environment = envTex;
+  pmremGenerator.dispose();
+
+  // ─── Shimmer Particles ───────────────────────────────
+  const PARTICLE_COUNT = 2500;
+  const particleGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(PARTICLE_COUNT * 3);
+  const particleBasePos = new Float32Array(PARTICLE_COUNT * 3); // original cloud pos
+  const particleDiagPos = new Float32Array(PARTICLE_COUNT * 3); // diagonal rail pos
+
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const idx = i * 3;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(Math.random() * 2 - 1);
+    const r = 2.5 + Math.random() * 5;
+    particleBasePos[idx]   = r * Math.sin(phi) * Math.cos(theta);
+    particleBasePos[idx+1] = r * Math.sin(phi) * Math.sin(theta);
+    particleBasePos[idx+2] = r * Math.cos(phi);
+    // diagonal rail: shoot from bottom-left to top-right at 45 deg
+    const t = (i / PARTICLE_COUNT);
+    const spread = (Math.random() - 0.5) * 2;
+    particleDiagPos[idx]   = -12 + t * 24 + spread * 0.4;
+    particleDiagPos[idx+1] = -12 + t * 24 + spread * 0.4;
+    particleDiagPos[idx+2] = -4 + spread * 2;
+  }
+
+  positions.set(particleBasePos);
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const particleMat = new THREE.PointsMaterial({
+    color: 0xffd4e8,
+    size: 0.035,
+    transparent: true,
+    opacity: 0.7,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+  const particleSystem = new THREE.Points(particleGeo, particleMat);
+  scene.add(particleSystem);
+
+  // ─── Mouse tracking for hero ────────────────────────
+  const mouse = { x: 0, y: 0 };
+  const targetRot = { x: 0, y: 0 };
+  const currentRot = { x: 0, y: 0 };
+
+  document.addEventListener('mousemove', e => {
+    mouse.x = (e.clientX / window.innerWidth - 0.5) * 2;
+    mouse.y = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+
+  // ─── State flags ─────────────────────────────────────
+  let inServices = false;
+  let particleLerp = 0; // 0 = cloud, 1 = diagonal
+
+  // ─── Resize ──────────────────────────────────────────
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // ─── Animate ─────────────────────────────────────────
+  let clock = new THREE.Clock();
+  let frameId;
+
+  function animate() {
+    frameId = requestAnimationFrame(animate);
+    const elapsed = clock.getElapsedTime();
+    const delta = clock.getDelta ? 0.016 : 0.016;
+
+    // Mouse LERP rotation (hero)
+    if (!inServices) {
+      targetRot.x = mouse.y * 0.5;
+      targetRot.y = mouse.x * 0.5;
+      currentRot.x = THREE.MathUtils.lerp(currentRot.x, targetRot.x, 0.04);
+      currentRot.y = THREE.MathUtils.lerp(currentRot.y, targetRot.y, 0.04);
+      knotMesh.rotation.x = currentRot.x;
+      knotMesh.rotation.y = currentRot.y + elapsed * 0.15;
+    } else {
+      knotMesh.rotation.y += 0.008;
+      knotMesh.rotation.x += 0.003;
+    }
+
+    // Particle position interpolation
+    const posAttr = particleGeo.attributes.position;
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const idx = i * 3;
+      // animate along diagonal: offset by time when in services
+      const tOffset = inServices ? ((elapsed * 0.6 + i * 0.002) % 1) : 0;
+      const diagX = particleDiagPos[idx]   + (inServices ? tOffset * 6 : 0);
+      const diagY = particleDiagPos[idx+1] + (inServices ? tOffset * 6 : 0);
+      const diagZ = particleDiagPos[idx+2];
+      posAttr.array[idx]   = THREE.MathUtils.lerp(particleBasePos[idx],   diagX, particleLerp);
+      posAttr.array[idx+1] = THREE.MathUtils.lerp(particleBasePos[idx+1], diagY, particleLerp);
+      posAttr.array[idx+2] = THREE.MathUtils.lerp(particleBasePos[idx+2], diagZ, particleLerp);
+    }
+    posAttr.needsUpdate = true;
+    particleSystem.rotation.y = inServices ? 0 : elapsed * 0.04;
+
+    // Pink point light animation
+    pinkPoint.position.x = Math.sin(elapsed * 0.7) * 3;
+    pinkPoint.position.y = Math.cos(elapsed * 0.5) * 2;
+    goldPoint.position.x = Math.cos(elapsed * 0.6) * 3;
+    goldPoint.position.z = Math.sin(elapsed * 0.8) * 2;
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // expose for GSAP callbacks
+  window.__threeState = {
+    knotMesh, material, camera, particleLerp: 0,
+    setParticleLerp(v) { particleLerp = v; },
+    setInServices(v) { inServices = v; }
+  };
+
+})();
+
+
+/* ═══════════════════════════════════════════
+   GSAP SCROLL ANIMATIONS
+═══════════════════════════════════════════ */
+gsap.registerPlugin(ScrollTrigger);
+
+// Preloader out
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('preloader').classList.add('hidden');
+  }, 2600);
+});
+
+// Hero camera Z dive
+ScrollTrigger.create({
+  trigger: '#hero',
+  start: 'top top',
+  end: 'bottom top',
+  scrub: 1.5,
+  onUpdate(self) {
+    const prog = self.progress;
+    if (window.__threeState) {
+      window.__threeState.camera.position.z = 4.6 - prog * 2.2;
+    }
+  }
+});
+
+// Services: wireframe + diagonal particles + bento slide
+ScrollTrigger.create({
+  trigger: '#services',
+  start: 'top 70%',
+  end: 'top 20%',
+  scrub: 1,
+  onUpdate(self) {
+    if (!window.__threeState) return;
+    const prog = self.progress;
+    window.__threeState.setParticleLerp(prog);
+    window.__threeState.knotMesh.material.wireframe = prog > 0.5;
+    window.__threeState.setInServices(prog > 0.5);
+  }
+});
+
+// Bento grid diagonal push
+gsap.to('#bento-grid', {
+  scrollTrigger: {
+    trigger: '#services',
+    start: 'top top',
+    end: '+=2500',
+    pin: true,
+    scrub: 1.5,
+    pinSpacing: true,
+    onLeave() {
+      // rebuild solid knot
+      if (window.__threeState) {
+        window.__threeState.knotMesh.material.wireframe = false;
+        window.__threeState.setInServices(false);
+        window.__threeState.setParticleLerp(0);
+      }
+    }
+  },
+  x: '130vw',
+  y: '-130vh',
+  ease: 'power2.inOut'
+});
+
+// Exit services: restore knot
+ScrollTrigger.create({
+  trigger: '#specialists',
+  start: 'top 80%',
+  onEnter() {
+    if (window.__threeState) {
+      gsap.to({}, {
+        duration: 1.2,
+        onUpdate() {
+          const prog = this.progress();
+          window.__threeState.setParticleLerp(1 - prog);
+          window.__threeState.knotMesh.material.wireframe = (1 - prog) > 0.5;
+        },
+        onComplete() {
+          if (window.__threeState) {
+            window.__threeState.setParticleLerp(0);
+            window.__threeState.knotMesh.material.wireframe = false;
+            window.__threeState.setInServices(false);
+          }
+        }
+      });
+    }
+  }
+});
+
+// Camera return on specialists
+ScrollTrigger.create({
+  trigger: '#specialists',
+  start: 'top 80%',
+  end: 'top 20%',
+  scrub: 1,
+  onUpdate(self) {
+    if (window.__threeState) {
+      const z = 2.4 + self.progress * 2.2;
+      window.__threeState.camera.position.z = z;
+    }
+  }
+});
+
+
+/* ═══════════════════════════════════════════
+   DATA PULSE STRINGS (diagonal neon)
+═══════════════════════════════════════════ */
+(function() {
+  const pulses = [
+    { el: document.getElementById('pulse1'), delay: 0,    speed: 3200 },
+    { el: document.getElementById('pulse2'), delay: 800,  speed: 4000 },
+    { el: document.getElementById('pulse3'), delay: 1600, speed: 2800 },
+    { el: document.getElementById('pulse4'), delay: 2400, speed: 3600 },
+  ];
+
+  let pulseActive = false;
+
+  ScrollTrigger.create({
+    trigger: '#services',
+    start: 'top 60%',
+    end: 'bottom top',
+    onEnter() { pulseActive = true; startPulses(); },
+    onLeave() { pulseActive = false; stopPulses(); },
+    onEnterBack() { pulseActive = true; startPulses(); },
+    onLeaveBack() { pulseActive = false; stopPulses(); }
+  });
+
+  let timers = [];
+  function startPulses() {
+    pulses.forEach((p, i) => {
+      const t = setTimeout(() => runPulse(p, i), p.delay);
+      timers.push(t);
+    });
+  }
+  function stopPulses() {
+    timers.forEach(t => clearTimeout(t));
+    timers = [];
+    pulses.forEach(p => gsap.to(p.el, { opacity: 0, duration: 0.4 }));
+  }
+
+  function runPulse(p, idx) {
+    if (!pulseActive) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const startX = -200 + (idx * 60);
+    const startY = vh * 0.9 - idx * 80;
+    gsap.set(p.el, { x: startX, y: startY, opacity: 0 });
+    gsap.to(p.el, {
+      x: vw + 200,
+      y: startY - vh * 1.1,
+      opacity: 0.9,
+      duration: p.speed / 1000,
+      ease: 'none',
+      onStart() { gsap.to(p.el, { opacity: 0.9, duration: 0.3 }); },
+      onComplete() {
+        if (pulseActive) {
+          setTimeout(() => runPulse(p, idx), 500 + idx * 200);
+        }
+      }
+    });
+  }
+})();
+
+
+/* ═══════════════════════════════════════════
+   BENTO CARD 3D TILT
+═══════════════════════════════════════════ */
+document.querySelectorAll('[data-tilt]').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = e.clientX - cx;
+    const dy = e.clientY - cy;
+    const rx = (dy / rect.height) * -14;
+    const ry = (dx / rect.width) * 14;
+    card.style.transform = `perspective(700px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.025)`;
+    card.style.setProperty('--mx', `${((e.clientX - rect.left) / rect.width) * 100}%`);
+    card.style.setProperty('--my', `${((e.clientY - rect.top) / rect.height) * 100}%`);
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'perspective(700px) rotateX(0) rotateY(0) scale(1)';
+  });
+});
+
+
+/* ═══════════════════════════════════════════
+   REVEAL ON SCROLL (intersection observer)
+═══════════════════════════════════════════ */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+
+/* ═══════════════════════════════════════════
+   SMOOTH ANCHOR SCROLLING
+═══════════════════════════════════════════ */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  });
+});
+
+</script>
+</body>
+</html>
